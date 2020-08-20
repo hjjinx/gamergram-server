@@ -1,6 +1,7 @@
 const express = require("express");
 const { User, validateUser } = require("../models/user");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const router = express.Router();
 
@@ -35,12 +36,25 @@ router.post("/signup", async (req, res) => {
 });
 
 router.post("/login", (req, res) => {
-  const { userOrEmail, password } = req.body;
-  const whatIsIt = "email";
-  const emailRegEx = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  if (userOrEmail.search(emailRegEx) === -1) {
-    whatIsIt = "username";
-  }
+  const { username, email, password } = req.body;
+
+  User.findOne({ $or: [{ email: email }, { username: username }] })
+    .then(async (user) => {
+      if (!user)
+        return res.status(400).json({ message: "Invalid credentials" });
+      if (!(await bcrypt.compare(password, user.password)))
+        return res.status(400).json({ message: "Invalid credentials" });
+
+      const token = jwt.sign(
+        { _id: user._id },
+        require("../secret.json").jwtKey
+      );
+      res.status(200).json({ message: "success", token });
+    })
+    .catch((err) => {
+      console.log("Error in finding user");
+      console.log(err);
+    });
 });
 
 module.exports = router;
