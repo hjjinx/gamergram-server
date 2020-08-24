@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Joi = require("joi");
 
-const User = mongoose.model(
+exports.User = mongoose.model(
   "User",
   new mongoose.Schema({
     username: {
@@ -30,5 +30,3 @@ exports.validateUser = vali = (user) => {
   });
   return schema.validate(user);
 };
-
-exports.User = User;
